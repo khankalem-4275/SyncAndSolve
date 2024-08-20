@@ -10,6 +10,9 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-svg-core": "^6.6.0",
+        "@fortawesome/free-solid-svg-icons": "^6.6.0",
+        "@fortawesome/react-fontawesome": "^0.2.2",
         "@uiw/codemirror-extensions-color": "^4.21.21",
         "@uiw/codemirror-extensions-hyper-link": "^4.21.21",
         "@uiw/codemirror-extensions-langs": "^4.21.21",

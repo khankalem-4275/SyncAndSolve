@@ -10,7 +10,8 @@ import { SocketEvent } from "@/types/socket";
 import { USER_STATUS, User } from "@/types/user";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import Draggable from "react-draggable";
+// import Draggable from "react-draggable";
+import Draggable from 'react-draggable';
 
 // FontAwesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -26,11 +27,11 @@ function EditorPage() {
     const { status, setCurrentUser, currentUser } = useAppContext();
     const { socket } = useSocket();
     const location = useLocation();
-    const videoRef1 = useRef(null);
-    const videoRef2 = useRef(null);
+    const videoRef1 = useRef<any>(null);
+    const videoRef2 = useRef<any>(null);
 
     const [slideIn, setSlideIn] = useState(false); // State to control sliding
-    const [stream, setStream] = useState(null); // Store the media stream
+    const [stream, setStream] = useState<MediaStream | null>(null); // Store the media stream
     const [isVideoOn, setIsVideoOn] = useState(true); // State for video toggle
     const [isMicOn, setIsMicOn] = useState(true); // State for microphone toggle
 

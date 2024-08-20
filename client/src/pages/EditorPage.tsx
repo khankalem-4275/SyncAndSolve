@@ -71,7 +71,7 @@ function EditorPage() {
             });
 
             // Handle Remote User Unpublished
-            client.on("user-unpublished", (remoteUser) => {
+            client.on("user-unpublished", () => {
                 if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
             });
         } catch (error) {

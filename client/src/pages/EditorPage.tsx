@@ -6,82 +6,129 @@ import { useAppContext } from "@/context/AppContext";
 import { useSocket } from "@/context/SocketContext";
 import useFullScreen from "@/hooks/useFullScreen";
 import useUserActivity from "@/hooks/useUserActivity";
-import { SocketEvent } from "@/types/socket";
-import { USER_STATUS, User } from "@/types/user";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-// import Draggable from "react-draggable";
 import Draggable from 'react-draggable';
+import { USER_STATUS } from "@/types/user";
 
 // FontAwesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons';
 
+// Updated SocketEvent Type
+export enum SocketEvent {
+    JOIN_REQUEST = "join_request",
+    SEND_OFFER = "send_offer",
+    RECEIVE_OFFER = "receive_offer",
+    SEND_ANSWER = "send_answer",
+    RECEIVE_ANSWER = "receive_answer",
+    SEND_ICE_CANDIDATE = "send_ice_candidate",
+    RECEIVE_ICE_CANDIDATE = "receive_ice_candidate",
+    // Other events...
+}
+
 function EditorPage() {
-    // Listen user online/offline status
-    useUserActivity();
-    // Enable fullscreen mode
-    useFullScreen();
+    useUserActivity(); // Listen user online/offline status
+    useFullScreen(); // Enable fullscreen mode
+
     const navigate = useNavigate();
     const { roomId } = useParams();
     const { status, setCurrentUser, currentUser } = useAppContext();
     const { socket } = useSocket();
     const location = useLocation();
-    const videoRef1 = useRef<any>(null);
-    const videoRef2 = useRef<any>(null);
+    const localVideoRef = useRef<any>(null);
+    const remoteVideoRef = useRef<any>(null);
 
-    const [slideIn, setSlideIn] = useState(false); // State to control sliding
-    const [stream, setStream] = useState<MediaStream | null>(null); // Store the media stream
-    const [isVideoOn, setIsVideoOn] = useState(true); // State for video toggle
-    const [isMicOn, setIsMicOn] = useState(true); // State for microphone toggle
+    const [slideIn, setSlideIn] = useState(false);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [isVideoOn, setIsVideoOn] = useState(true);
+    const [isMicOn, setIsMicOn] = useState(true);
+
+    const pc = useRef<RTCPeerConnection>(new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    })).current;
 
     useEffect(() => {
-        setTimeout(() => setSlideIn(true), 100); // Delay the slide to make it smooth
+        setTimeout(() => setSlideIn(true), 100); // Smooth slide animation
     }, []);
 
     useEffect(() => {
         if (currentUser.username.length > 0) return;
         const username = location.state?.username;
         if (username === undefined) {
-            navigate("/", {
-                state: { roomId },
-            });
+            navigate("/", { state: { roomId } });
         } else if (roomId) {
-            const user: User = { username, roomId };
+            const user = { username, roomId };
             setCurrentUser(user);
             socket.emit(SocketEvent.JOIN_REQUEST, user);
         }
-    }, [
-        currentUser.username,
-        location.state?.username,
-        navigate,
-        roomId,
-        setCurrentUser,
-        socket,
-    ]);
+    }, [currentUser.username, location.state?.username, navigate, roomId, setCurrentUser, socket]);
 
-    // Request microphone and camera access
     useEffect(() => {
         const getMediaStream = async () => {
             try {
-                const userStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true,
-                });
+                const userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 setStream(userStream);
-                if (videoRef1.current) {
-                    videoRef1.current.srcObject = userStream;
+
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = userStream;
                 }
-                if (videoRef2.current) {
-                    videoRef2.current.srcObject = userStream;
+
+                userStream.getTracks().forEach(track => pc.addTrack(track, userStream));
+
+                socket.on(SocketEvent.RECEIVE_OFFER, async ({ offer }) => {
+                    if (offer) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        socket.emit(SocketEvent.SEND_ANSWER, { roomId, answer });
+                    }
+                });
+
+                socket.on(SocketEvent.RECEIVE_ANSWER, async ({ answer }) => {
+                    if (answer) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    }
+                });
+
+                socket.on(SocketEvent.RECEIVE_ICE_CANDIDATE, async ({ candidate }) => {
+                    if (candidate) {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    }
+                });
+
+                pc.onicecandidate = event => {
+                    if (event.candidate) {
+                        socket.emit(SocketEvent.SEND_ICE_CANDIDATE, { roomId, candidate: event.candidate });
+                    }
+                };
+
+                pc.ontrack = event => {
+                    if (remoteVideoRef.current) {
+                        remoteVideoRef.current.srcObject = event.streams[0];
+                    }
+                };
+
+                const createOffer = async () => {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    socket.emit(SocketEvent.SEND_OFFER, { roomId, offer });
+                };
+
+                if (location.state?.isInitiator) {
+                    createOffer();
                 }
             } catch (error) {
-                console.error("Error accessing media devices.", error);
+                console.error("Error accessing media devices:", error);
             }
         };
 
         getMediaStream();
-    }, []);
+
+        return () => {
+            pc.close();
+        };
+    }, [pc, roomId, socket, location.state?.isInitiator]);
 
     // Toggle Video On/Off
     const toggleVideo = () => {
@@ -124,57 +171,53 @@ function EditorPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                     <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001, display: 'flex', gap: '10px' }}>
                         {/* Video and Mic Toggle Icons */}
-                        <FontAwesomeIcon 
-                            icon={isVideoOn ? faVideo : faVideoSlash} 
-                            onClick={toggleVideo} 
-                            style={{ fontSize: '24px', cursor: 'pointer', color: isVideoOn ? 'green' : 'red' }} 
+                        <FontAwesomeIcon
+                            icon={isVideoOn ? faVideo : faVideoSlash}
+                            onClick={toggleVideo}
+                            style={{ fontSize: '24px', cursor: 'pointer', color: isVideoOn ? 'green' : 'red' }}
                         />
-                        <FontAwesomeIcon 
-                            icon={isMicOn ? faMicrophone : faMicrophoneSlash} 
-                            onClick={toggleMic} 
-                            style={{ fontSize: '24px', cursor: 'pointer', color: isMicOn ? 'green' : 'red' }} 
+                        <FontAwesomeIcon
+                            icon={isMicOn ? faMicrophone : faMicrophoneSlash}
+                            onClick={toggleMic}
+                            style={{ fontSize: '24px', cursor: 'pointer', color: isMicOn ? 'green' : 'red' }}
                         />
                     </div>
 
-                    {/* First Video Window */}
+                    {/* Draggable Video Stream */}
                     <Draggable>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', flexGrow: 1 }}>
-                            <video 
-                                ref={videoRef1} 
-                                autoPlay 
-                                muted 
-                                style={{ 
-                                    width: 'auto',  
-                                    height: 'auto',  
-                                    zIndex: 1000,  
-                                    borderRadius: '8px',  
-                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',  
-                                    cursor: 'move',  
-                                    margin: '20px',  
-                                }} 
+                            <video
+                                ref={localVideoRef}
+                                autoPlay
+                                muted
+                                style={{
+                                    width: 'auto',
+                                    height: 'auto',
+                                    zIndex: 1000,
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                                    cursor: 'move',
+                                    margin: '20px',
+                                }}
                             />
                         </div>
                     </Draggable>
 
-                    {/* Second Video Window */}
-                    <Draggable>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', flexGrow: 1 }}>
-                            <video 
-                                ref={videoRef2} 
-                                autoPlay 
-                                muted 
-                                style={{ 
-                                    width: 'auto',  
-                                    height: 'auto',  
-                                    zIndex: 1000,  
-                                    borderRadius: '8px',  
-                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',  
-                                    cursor: 'move',  
-                                    margin: '20px',  
-                                }} 
-                            />
-                        </div>
-                    </Draggable>
+                    {/* Remote Video Stream */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', flexGrow: 1 }}>
+                        <video
+                            ref={remoteVideoRef}
+                            autoPlay
+                            style={{
+                                width: 'auto',
+                                height: 'auto',
+                                zIndex: 1000,
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                                margin: '20px',
+                            }}
+                        />
+                    </div>
                 </div>
             </SplitterComponent>
         </div>

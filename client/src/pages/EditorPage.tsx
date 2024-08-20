@@ -3,41 +3,28 @@ import ConnectionStatusPage from "@/components/connection/ConnectionStatusPage";
 import Sidebar from "@/components/sidebar/Sidebar";
 import WorkSpace from "@/components/workspace";
 import { useAppContext } from "@/context/AppContext";
-import { useSocket } from "@/context/SocketContext";
-import useFullScreen from "@/hooks/useFullScreen";
-import useUserActivity from "@/hooks/useUserActivity";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Draggable from 'react-draggable';
-import { USER_STATUS } from "@/types/user";
-import { SocketEvent } from "@/types/socket";
-
-// FontAwesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons';
-
-// Updated SocketEvent Type
+import AgoraRTC from 'agora-rtc-sdk-ng';
+import { USER_STATUS } from "@/types/user";
 
 function EditorPage() {
-    useUserActivity(); // Listen user online/offline status
-    useFullScreen(); // Enable fullscreen mode
-
     const navigate = useNavigate();
     const { roomId } = useParams();
     const { status, setCurrentUser, currentUser } = useAppContext();
-    const { socket } = useSocket();
     const location = useLocation();
+
     const localVideoRef = useRef<any>(null);
     const remoteVideoRef = useRef<any>(null);
 
     const [slideIn, setSlideIn] = useState(false);
-    const [stream, setStream] = useState<MediaStream | null>(null);
     const [isVideoOn, setIsVideoOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
-
-    const pc = useRef<RTCPeerConnection>(new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    })).current;
+    const client = useRef(AgoraRTC.createClient({ mode: "rtc", codec: "vp8" })).current;
+    const localTracks = useRef<{ videoTrack: any; audioTrack: any } | null>(null);
 
     useEffect(() => {
         setTimeout(() => setSlideIn(true), 100); // Smooth slide animation
@@ -51,95 +38,66 @@ function EditorPage() {
         } else if (roomId) {
             const user = { username, roomId };
             setCurrentUser(user);
-            socket.emit(SocketEvent.JOIN_REQUEST, user);
+            joinRoom(user);
         }
-    }, [currentUser.username, location.state?.username, navigate, roomId, setCurrentUser, socket]);
+    }, [currentUser.username, location.state?.username, navigate, roomId, setCurrentUser]);
 
-    useEffect(() => {
-        const getMediaStream = async () => {
-            try {
-                const userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                setStream(userStream);
+    const joinRoom = async (user: { username: string; roomId: string }) => {
+        try {
+            // Join Agora Channel
+            await client.join('3ec3d2d90f194a7092eea8fe0dbbc51a', user.roomId, null, user.username);
 
-                if (localVideoRef.current) {
-                    localVideoRef.current.srcObject = userStream;
+            // Create Local Tracks
+            localTracks.current = {
+                videoTrack: await AgoraRTC.createCameraVideoTrack(),
+                audioTrack: await AgoraRTC.createMicrophoneAudioTrack(),
+            };
+
+            // Play Local Video
+            localTracks.current.videoTrack.play(localVideoRef.current);
+
+            // Publish Local Tracks
+            await client.publish(Object.values(localTracks.current));
+
+            // Handle Remote User Published
+            client.on("user-published", async (remoteUser, mediaType) => {
+                await client.subscribe(remoteUser, mediaType);
+                if (mediaType === "video" && remoteUser.videoTrack) {
+                    remoteUser.videoTrack.play(remoteVideoRef.current);
                 }
-
-                userStream.getTracks().forEach(track => pc.addTrack(track, userStream));
-
-                socket.on(SocketEvent.RECEIVE_OFFER, async ({ offer }) => {
-                    if (offer) {
-                        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        socket.emit(SocketEvent.SEND_ANSWER, { roomId, answer });
-                    }
-                });
-
-                socket.on(SocketEvent.RECEIVE_ANSWER, async ({ answer }) => {
-                    if (answer) {
-                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                    }
-                });
-
-                socket.on(SocketEvent.RECEIVE_ICE_CANDIDATE, async ({ candidate }) => {
-                    if (candidate) {
-                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                    }
-                });
-
-                pc.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.emit(SocketEvent.SEND_ICE_CANDIDATE, { roomId, candidate: event.candidate });
-                    }
-                };
-
-                pc.ontrack = event => {
-                    if (remoteVideoRef.current) {
-                        remoteVideoRef.current.srcObject = event.streams[0];
-                    }
-                };
-
-                const createOffer = async () => {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    socket.emit(SocketEvent.SEND_OFFER, { roomId, offer });
-                };
-
-                if (location.state?.isInitiator) {
-                    createOffer();
+                if (mediaType === "audio" && remoteUser.audioTrack) {
+                    remoteUser.audioTrack.play();
                 }
-            } catch (error) {
-                console.error("Error accessing media devices:", error);
-            }
-        };
+            });
 
-        getMediaStream();
-
-        return () => {
-            pc.close();
-        };
-    }, [pc, roomId, socket, location.state?.isInitiator]);
-
-    // Toggle Video On/Off
-    const toggleVideo = () => {
-        if (stream) {
-            const videoTrack = stream.getVideoTracks()[0];
-            if (videoTrack) {
-                videoTrack.enabled = !videoTrack.enabled;
-                setIsVideoOn(videoTrack.enabled);
-            }
+            // Handle Remote User Unpublished
+            client.on("user-unpublished", (remoteUser) => {
+                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+            });
+        } catch (error) {
+            console.error("Failed to join Agora channel:", error);
         }
     };
 
-    // Toggle Microphone On/Off
-    const toggleMic = () => {
-        if (stream) {
-            const audioTrack = stream.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                setIsMicOn(audioTrack.enabled);
+    const toggleVideo = () => {
+        if (localTracks.current?.videoTrack) {
+            if (isVideoOn) {
+                localTracks.current.videoTrack.setEnabled(false);
+            } else {
+                localTracks.current.videoTrack.setEnabled(true);
             }
+            setIsVideoOn(!isVideoOn);
+        }
+    };
+
+    const toggleMic = () => {
+        if (localTracks.current?.audioTrack) {
+            if (isMicOn) {
+                localTracks.current.audioTrack.setEnabled(false);
+            } else {
+                localTracks.current.audioTrack.setEnabled(true);
+            }
+            setIsMicOn(!isMicOn);
         }
     };
 
@@ -174,7 +132,7 @@ function EditorPage() {
                         />
                     </div>
 
-                    {/* Draggable Video Stream */}
+                    {/* Draggable Local Video Stream */}
                     <Draggable>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', flexGrow: 1 }}>
                             <video

@@ -10,22 +10,13 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Draggable from 'react-draggable';
 import { USER_STATUS } from "@/types/user";
+import { SocketEvent } from "@/types/socket";
 
 // FontAwesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons';
 
 // Updated SocketEvent Type
-export enum SocketEvent {
-    JOIN_REQUEST = "join_request",
-    SEND_OFFER = "send_offer",
-    RECEIVE_OFFER = "receive_offer",
-    SEND_ANSWER = "send_answer",
-    RECEIVE_ANSWER = "receive_answer",
-    SEND_ICE_CANDIDATE = "send_ice_candidate",
-    RECEIVE_ICE_CANDIDATE = "receive_ice_candidate",
-    // Other events...
-}
 
 function EditorPage() {
     useUserActivity(); // Listen user online/offline status

@@ -7,7 +7,7 @@ function Footer() {
                     href="https://github.com/khankalem-4275/SyncAndSolve"
                     className="text-primary underline underline-offset-1"
                 >
-                    sahilatahar
+                    Mayuresh-Khankale and Team
                 </a>
             </span>
         </footer>

@@ -9,7 +9,7 @@ import { createStore } from 'redux';
 import { Provider } from 'react-redux';
 
 // A simple reducer (modify as needed)
-const rootReducer = (state = {}, action: any) => state;
+const rootReducer = (state = {},) => state;
 
 const store = createStore(rootReducer);
 

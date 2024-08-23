@@ -1,103 +1,231 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useAppContext } from "@/context/AppContext";
+import { useSocket } from "@/context/SocketContext";
+import { SocketEvent } from "@/types/socket";
+import { USER_STATUS, User } from "@/types/user";
 import SplitterComponent from "@/components/SplitterComponent";
 import ConnectionStatusPage from "@/components/connection/ConnectionStatusPage";
 import Sidebar from "@/components/sidebar/Sidebar";
 import WorkSpace from "@/components/workspace";
-import { useAppContext } from "@/context/AppContext";
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Draggable from 'react-draggable';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons';
-import AgoraRTC from 'agora-rtc-sdk-ng';
-import { USER_STATUS } from "@/types/user";
 
 function EditorPage() {
     const navigate = useNavigate();
     const { roomId } = useParams();
     const { status, setCurrentUser, currentUser } = useAppContext();
+    const { socket } = useSocket();
     const location = useLocation();
-
-    const localVideoRef = useRef<any>(null);
-    const remoteVideoRef = useRef<any>(null);
-
-    const [slideIn, setSlideIn] = useState(false);
+    const localVideoRef = useRef<HTMLVideoElement>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
     const [isVideoOn, setIsVideoOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
-    const client = useRef(AgoraRTC.createClient({ mode: "rtc", codec: "vp8" })).current;
-    const localTracks = useRef<{ videoTrack: any; audioTrack: any } | null>(null);
+    const [slideIn, setSlideIn] = useState(false);
+    const [peerConnections, setPeerConnections] = useState<Map<string, RTCPeerConnection>>(new Map());
 
     useEffect(() => {
-        setTimeout(() => setSlideIn(true), 100); // Smooth slide animation
+        setTimeout(() => setSlideIn(true), 100); // Delay the slide to make it smooth
     }, []);
 
     useEffect(() => {
         if (currentUser.username.length > 0) return;
         const username = location.state?.username;
         if (username === undefined) {
-            navigate("/", { state: { roomId } });
+            navigate("/", {
+                state: { roomId },
+            });
         } else if (roomId) {
-            const user = { username, roomId };
+            const user: User = { username, roomId };
             setCurrentUser(user);
-            joinRoom(user);
+            socket.emit(SocketEvent.JOIN_REQUEST, user);
         }
-    }, [currentUser.username, location.state?.username, navigate, roomId, setCurrentUser]);
+    }, [currentUser.username, location.state?.username, navigate, roomId, setCurrentUser, socket]);
 
-    const joinRoom = async (user: { username: string; roomId: string }) => {
-        try {
-            // Join Agora Channel
-            await client.join('3ec3d2d90f194a7092eea8fe0dbbc51a', user.roomId, null, user.username);
+    useEffect(() => {
+        const getMediaStream = async () => {
+            try {
+                const userStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true,
+                });
+                setStream(userStream);
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = userStream;
+                }
 
-            // Create Local Tracks
-            localTracks.current = {
-                videoTrack: await AgoraRTC.createCameraVideoTrack(),
-                audioTrack: await AgoraRTC.createMicrophoneAudioTrack(),
+                socket.on(SocketEvent.ADD_STREAM, (data) => {
+                    console.log(`Received ADD_STREAM:`, data);
+                    const { stream: incomingStream, socketId } = data;
+                    const pc = peerConnections.get(socketId);
+                    if (pc) {
+                        incomingStream.getTracks().forEach((track: MediaStreamTrack) => {
+                            pc.addTrack(track, incomingStream);
+                        });
+
+                        let videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
+                        if (!videoElement) {
+                            videoElement = document.createElement('video');
+                            videoElement.id = `remote-${socketId}`;
+                            videoElement.autoplay = true;
+                            videoElement.style.width = '200px';
+                            videoElement.style.height = '150px';
+                            videoElement.style.position = 'absolute';
+                            videoElement.style.border = '1px solid black';
+                            videoElement.style.borderRadius = '8px';
+                            document.body.appendChild(videoElement);
+                        }
+                        videoElement.srcObject = incomingStream;
+                    } else {
+                        console.error(`Peer connection for ${socketId} not found`);
+                    }
+                });
+
+                socket.on(SocketEvent.SIGNAL_ICE_CANDIDATE, (data) => {
+                    console.log(`Received SIGNAL_ICE_CANDIDATE:`, data);
+                    const { candidate, socketId } = data;
+                    const pc = peerConnections.get(socketId);
+                    if (pc) {
+                        pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    } else {
+                        console.error(`Peer connection for ${socketId} not found`);
+                    }
+                });
+
+                socket.on(SocketEvent.REMOVE_STREAM, (data) => {
+                    console.log(`Received REMOVE_STREAM:`, data);
+                    const { socketId } = data;
+                    const pc = peerConnections.get(socketId);
+                    if (pc) {
+                        pc.getSenders().forEach((sender) => {
+                            pc.removeTrack(sender);
+                        });
+                        const videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
+                        if (videoElement) {
+                            videoElement.remove();
+                        }
+                    } else {
+                        console.error(`Peer connection for ${socketId} not found`);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error accessing media devices.", error);
+            }
+        };
+
+        getMediaStream();
+
+        return () => {
+            socket.off(SocketEvent.ADD_STREAM);
+            socket.off(SocketEvent.SIGNAL_ICE_CANDIDATE);
+            socket.off(SocketEvent.REMOVE_STREAM);
+        };
+    }, [socket, peerConnections]);
+
+    useEffect(() => {
+        const createPeerConnection = (socketId: string) => {
+            const pc = new RTCPeerConnection();
+            peerConnections.set(socketId, pc);
+            setPeerConnections(new Map(peerConnections));
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit(SocketEvent.SIGNAL_ICE_CANDIDATE, {
+                        candidate: event.candidate,
+                        roomId,
+                    });
+                }
             };
 
-            // Play Local Video
-            localTracks.current.videoTrack.play(localVideoRef.current);
-
-            // Publish Local Tracks
-            await client.publish(Object.values(localTracks.current));
-
-            // Handle Remote User Published
-            client.on("user-published", async (remoteUser, mediaType) => {
-                await client.subscribe(remoteUser, mediaType);
-                if (mediaType === "video" && remoteUser.videoTrack) {
-                    remoteUser.videoTrack.play(remoteVideoRef.current);
+            pc.ontrack = (event) => {
+                console.log(`Received track event from ${socketId}:`, event);
+                const remoteStream = new MediaStream();
+                remoteStream.addTrack(event.track);
+                let videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
+                if (!videoElement) {
+                    videoElement = document.createElement('video');
+                    videoElement.id = `remote-${socketId}`;
+                    videoElement.autoplay = true;
+                    videoElement.style.width = '200px';
+                    videoElement.style.height = '150px';
+                    videoElement.style.position = 'absolute';
+                    videoElement.style.border = '1px solid black';
+                    videoElement.style.borderRadius = '8px';
+                    document.body.appendChild(videoElement);
                 }
-                if (mediaType === "audio" && remoteUser.audioTrack) {
-                    remoteUser.audioTrack.play();
-                }
+                videoElement.srcObject = remoteStream;
+            };
+
+            stream?.getTracks().forEach((track) => {
+                pc.addTrack(track, stream);
             });
 
-            // Handle Remote User Unpublished
-            client.on("user-unpublished", () => {
-                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+            return pc;
+        };
+
+        socket.on(SocketEvent.JOIN_REQUEST, async (data) => {
+            console.log(`Received JOIN_REQUEST:`, data);
+            const { socketId } = data;
+            const pc = createPeerConnection(socketId);
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit(SocketEvent.SIGNAL_OFFER, {
+                offer,
+                roomId,
             });
-        } catch (error) {
-            console.error("Failed to join Agora channel:", error);
-        }
-    };
+        });
+
+        socket.on(SocketEvent.SIGNAL_OFFER, async (data) => {
+            console.log(`Received SIGNAL_OFFER:`, data);
+            const { offer, socketId } = data;
+            const pc = createPeerConnection(socketId);
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit(SocketEvent.SIGNAL_ANSWER, {
+                answer,
+                roomId,
+            });
+        });
+
+        socket.on(SocketEvent.SIGNAL_ANSWER, async (data) => {
+            console.log(`Received SIGNAL_ANSWER:`, data);
+            const { answer, socketId } = data;
+            const pc = peerConnections.get(socketId);
+            if (pc) {
+                await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            } else {
+                console.error(`Peer connection for ${socketId} not found`);
+            }
+        });
+
+        return () => {
+            socket.off(SocketEvent.JOIN_REQUEST);
+            socket.off(SocketEvent.SIGNAL_OFFER);
+            socket.off(SocketEvent.SIGNAL_ANSWER);
+        };
+    }, [socket, stream, peerConnections, roomId]);
 
     const toggleVideo = () => {
-        if (localTracks.current?.videoTrack) {
-            if (isVideoOn) {
-                localTracks.current.videoTrack.setEnabled(false);
-            } else {
-                localTracks.current.videoTrack.setEnabled(true);
+        if (stream) {
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                setIsVideoOn(videoTrack.enabled);
             }
-            setIsVideoOn(!isVideoOn);
         }
     };
 
     const toggleMic = () => {
-        if (localTracks.current?.audioTrack) {
-            if (isMicOn) {
-                localTracks.current.audioTrack.setEnabled(false);
-            } else {
-                localTracks.current.audioTrack.setEnabled(true);
+        if (stream) {
+            const audioTrack = stream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMicOn(audioTrack.enabled);
             }
-            setIsMicOn(!isMicOn);
         }
     };
 
@@ -132,41 +260,15 @@ function EditorPage() {
                         />
                     </div>
 
-                    {/* Draggable Local Video Stream */}
+                    {/* Local Video Window */}
                     <Draggable>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', flexGrow: 1 }}>
-                            <video
-                                ref={localVideoRef}
-                                autoPlay
-                                muted
-                                style={{
-                                    width: 'auto',
-                                    height: 'auto',
-                                    zIndex: 1000,
-                                    borderRadius: '8px',
-                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                                    cursor: 'move',
-                                    margin: '20px',
-                                }}
-                            />
-                        </div>
-                    </Draggable>
-
-                    {/* Remote Video Stream */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', flexGrow: 1 }}>
                         <video
-                            ref={remoteVideoRef}
+                            ref={localVideoRef}
                             autoPlay
-                            style={{
-                                width: 'auto',
-                                height: 'auto',
-                                zIndex: 1000,
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                                margin: '20px',
-                            }}
+                            muted
+                            style={{ width: '200px', height: '150px', position: 'absolute', border: '1px solid black', borderRadius: '8px' }}
                         />
-                    </div>
+                    </Draggable>
                 </div>
             </SplitterComponent>
         </div>

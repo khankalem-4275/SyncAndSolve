@@ -19,11 +19,13 @@ function EditorPage() {
     const { socket } = useSocket();
     const location = useLocation();
     const localVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [isVideoOn, setIsVideoOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
     const [slideIn, setSlideIn] = useState(false);
     const [peerConnections, setPeerConnections] = useState<Map<string, RTCPeerConnection>>(new Map());
+    const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
     useEffect(() => {
         setTimeout(() => setSlideIn(true), 100); // Delay the slide to make it smooth
@@ -64,19 +66,9 @@ function EditorPage() {
                             pc.addTrack(track, incomingStream);
                         });
 
-                        let videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
-                        if (!videoElement) {
-                            videoElement = document.createElement('video');
-                            videoElement.id = `remote-${socketId}`;
-                            videoElement.autoplay = true;
-                            videoElement.style.width = '200px';
-                            videoElement.style.height = '150px';
-                            videoElement.style.position = 'absolute';
-                            videoElement.style.border = '1px solid black';
-                            videoElement.style.borderRadius = '8px';
-                            document.body.appendChild(videoElement);
+                        if (remoteVideoRef.current) {
+                            remoteVideoRef.current.srcObject = incomingStream;
                         }
-                        videoElement.srcObject = incomingStream;
                     } else {
                         console.error(`Peer connection for ${socketId} not found`);
                     }
@@ -101,9 +93,8 @@ function EditorPage() {
                         pc.getSenders().forEach((sender) => {
                             pc.removeTrack(sender);
                         });
-                        const videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
-                        if (videoElement) {
-                            videoElement.remove();
+                        if (remoteVideoRef.current) {
+                            remoteVideoRef.current.srcObject = null;
                         }
                     } else {
                         console.error(`Peer connection for ${socketId} not found`);
@@ -126,7 +117,7 @@ function EditorPage() {
 
     useEffect(() => {
         const createPeerConnection = (socketId: string) => {
-            const pc = new RTCPeerConnection();
+            const pc = new RTCPeerConnection(iceServers);
             peerConnections.set(socketId, pc);
             setPeerConnections(new Map(peerConnections));
 
@@ -143,19 +134,10 @@ function EditorPage() {
                 console.log(`Received track event from ${socketId}:`, event);
                 const remoteStream = new MediaStream();
                 remoteStream.addTrack(event.track);
-                let videoElement = document.getElementById(`remote-${socketId}`) as HTMLVideoElement;
-                if (!videoElement) {
-                    videoElement = document.createElement('video');
-                    videoElement.id = `remote-${socketId}`;
-                    videoElement.autoplay = true;
-                    videoElement.style.width = '200px';
-                    videoElement.style.height = '150px';
-                    videoElement.style.position = 'absolute';
-                    videoElement.style.border = '1px solid black';
-                    videoElement.style.borderRadius = '8px';
-                    document.body.appendChild(videoElement);
+
+                if (remoteVideoRef.current) {
+                    remoteVideoRef.current.srcObject = remoteStream;
                 }
-                videoElement.srcObject = remoteStream;
             };
 
             stream?.getTracks().forEach((track) => {
@@ -267,6 +249,15 @@ function EditorPage() {
                             autoPlay
                             muted
                             style={{ width: '200px', height: '150px', position: 'absolute', border: '1px solid black', borderRadius: '8px' }}
+                        />
+                    </Draggable>
+
+                    {/* Remote Video Window */}
+                    <Draggable>
+                        <video
+                            ref={remoteVideoRef}
+                            autoPlay
+                            style={{ width: '200px', height: '150px', position: 'absolute', top: '200px', border: '1px solid black', borderRadius: '8px' }}
                         />
                     </Draggable>
                 </div>

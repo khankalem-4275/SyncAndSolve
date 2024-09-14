@@ -54,6 +54,11 @@ Tldraw contributors:
       <td align="center" valign="top" style="padding : 10px">
         <img src="./images/aryan_galande_photo.png" width="120px;" alt="Mayuresh Khankale"/>
         <br />
+        <b>Amogh Thakurdesai</b>
+      </td>
+       <td align="center" valign="top" style="padding : 10px">
+        <img src="./images/aryan_photo.png" width="120px;" alt="Mayuresh Khankale"/>
+        <br />
         <b>Aryan Galande</b>
       </td>
     </tr>

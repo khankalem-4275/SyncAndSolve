@@ -28,7 +28,7 @@ Tldraw contributors:
 
 ## ✍️ About Developers
 
-<table cellspacing = "15">
+<table>
   <tbody>
     <tr>
       <td align="center" valign="top">
@@ -36,6 +36,7 @@ Tldraw contributors:
         <br />
         <b>Suramya Jadhav</b>
       </td>
+      <td>  </td>
        <td align="center" valign="top">
         <img src="./images/mayuresh_photo.png" width="120px;" alt="Mayuresh Khankale"/>
         <br />

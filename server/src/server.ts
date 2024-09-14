@@ -159,6 +159,38 @@ io.on("connection", (socket) => {
         socket.broadcast.to(roomId).emit(SocketEvent.FILE_UPDATED, { fileId, newContent });
     });
 
+    socket.on('ADD_STREAM', (data) => {
+        const { streamId, roomId, userId } = data;
+        socket.to(roomId).emit('ADD_STREAM', { streamId, userId, socketId: socket.id });
+        console.log(`Stream added by ${userId} (${socket.id}) in room: ${roomId}`);
+      });
+    
+
+      socket.on('SIGNAL_ICE_CANDIDATE', (data) => {
+        const { candidate, roomId, targetUserId } = data;
+        socket.to(roomId).emit('SIGNAL_ICE_CANDIDATE', { candidate, senderId: socket.id, targetUserId });
+        console.log(`ICE candidate sent by ${socket.id} to user: ${targetUserId} in room: ${roomId}`);
+      });
+
+      socket.on('SIGNAL_OFFER', (data) => {
+        const { offer, roomId, targetUserId } = data;
+        socket.to(roomId).emit('SIGNAL_OFFER', { offer, senderId: socket.id, targetUserId });
+        console.log(`Offer sent by ${socket.id} to user: ${targetUserId} in room: ${roomId}`);
+      });
+
+      socket.on('SIGNAL_ANSWER', (data) => {
+        const { answer, roomId, targetUserId } = data;
+        socket.to(roomId).emit('SIGNAL_ANSWER', { answer, senderId: socket.id, targetUserId });
+        console.log(`Answer sent by ${socket.id} to user: ${targetUserId} in room: ${roomId}`);
+      });
+    
+
+      socket.on('REMOVE_STREAM', (data) => {
+        const { streamId, roomId, userId } = data;
+        socket.to(roomId).emit('REMOVE_STREAM', { streamId, userId, socketId: socket.id });
+        console.log(`Stream removed by ${userId} (${socket.id}) in room: ${roomId}`);
+      });
+
     socket.on(SocketEvent.FILE_RENAMED, ({ fileId, newName }) => {
         const roomId = getRoomId(socket.id);
         if (!roomId) return;

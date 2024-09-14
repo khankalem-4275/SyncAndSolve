@@ -31,7 +31,10 @@ enum SocketEvent {
     SEND_ANSWER = "send_answer",
     RECEIVE_ANSWER = "receive_answer",
     SEND_OFFER = "send_offer",
-    RECEIVE_OFFER = "receive_offer"
+    RECEIVE_OFFER = "receive_offer",
+	OFFER = "offer",
+    ANSWER = "answer",
+    ICE_CANDIDATE = "ice-candidate",
 }
 
 interface SocketContext {

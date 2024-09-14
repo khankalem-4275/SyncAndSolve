@@ -37,6 +37,9 @@ enum SocketEvent {
     REMOVE_STREAM = 'remove_stream',
     SIGNAL_OFFER = 'signal_offer',
     SIGNAL_ANSWER = 'signal_answer',
+    OFFER = "offer",
+    ANSWER = "answer",
+    ICE_CANDIDATE = "ice-candidate",
 }
 
 interface SocketContext {

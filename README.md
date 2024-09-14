@@ -41,8 +41,50 @@ Tldraw contributors:
         <br />
         <b>Mayuresh Khankale</b>
       </td>
+      <td align="center" valign="top" style="padding : 10px">
+        <img src="./images/manav_photo.png" width="120px;" alt="Mayuresh Khankale"/>
+        <br />
+        <b>Manav Mehta</b>
+      </td>
+      <td align="center" valign="top" style="padding : 10px">
+        <img src="./images/advait_photo.png" width="120px;" alt="Mayuresh Khankale"/>
+        <br />
+        <b>Advait Kulkarni</b>
+      </td>
+      <td align="center" valign="top" style="padding : 10px">
+        <img src="./images/aryan_galande_photo.png" width="120px;" alt="Mayuresh Khankale"/>
+        <br />
+        <b>Aryan Galande</b>
+      </td>
     </tr>
     <tr>
+        <td align="center" style="padding : 10px">
+            <a href="https://github.com/sahilatahar">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://linkedin.com/in/sahilatahar">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
+        <td align="center" style="padding : 10px">
+            <a href="https://github.com/sahilatahar">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://linkedin.com/in/sahilatahar">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
+        <td align="center" style="padding : 10px">
+            <a href="https://github.com/sahilatahar">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://linkedin.com/in/sahilatahar">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
         <td align="center" style="padding : 10px">
             <a href="https://github.com/sahilatahar">
             <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
@@ -65,28 +107,4 @@ Tldraw contributors:
 
   </tbody>
 </table>
-
-
-<!-- <table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top">
-        <img src="./images/mayuresh_photo.png" width="120px;" alt="Mayuresh Khankale"/>
-        <br />
-        <b>Mayuresh Khankale</b>
-      </td>
-    </tr>
-    <tr>
-        <td align="center">
-            <a href="https://github.com/sahilatahar">
-            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
-        </a>
-        <br/>
-        <a href="https://linkedin.com/in/sahilatahar">
-            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
-        </a>
-        </td>
-    </tr>
-
-  </tbody>
-</table> -->
+       

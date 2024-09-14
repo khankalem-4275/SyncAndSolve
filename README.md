@@ -28,7 +28,7 @@ Tldraw contributors:
 
 ## ✍️ About Developers
 
-<table>
+<table cellspacing = "15">
   <tbody>
     <tr>
       <td align="center" valign="top">

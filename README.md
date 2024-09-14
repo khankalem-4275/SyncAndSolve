@@ -52,6 +52,15 @@ Tldraw contributors:
             <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
         </a>
         </td>
+        <td align="center">
+            <a href="https://github.com/sahilatahar">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://linkedin.com/in/sahilatahar">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
     </tr>
 
   </tbody>

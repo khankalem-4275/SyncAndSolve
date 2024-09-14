@@ -36,6 +36,11 @@ Tldraw contributors:
         <br />
         <b>Suramya Jadhav</b>
       </td>
+       <td align="center" valign="top">
+        <img src="./images/mayuresh_photo.png" width="120px;" alt="Mayuresh Khankale"/>
+        <br />
+        <b>Mayuresh Khankale</b>
+      </td>
     </tr>
     <tr>
         <td align="center">
@@ -53,7 +58,7 @@ Tldraw contributors:
 </table>
 
 
-<table>
+<!-- <table>
   <tbody>
     <tr>
       <td align="center" valign="top">
@@ -75,4 +80,4 @@ Tldraw contributors:
     </tr>
 
   </tbody>
-</table>
+</table> -->

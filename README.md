@@ -64,11 +64,29 @@ Tldraw contributors:
     </tr>
     <tr>
         <td align="center" style="padding : 10px">
-            <a href="https://github.com/sahilatahar">
+            <a href="https://github.com/khankalem-4275">
             <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
         </a>
         <br/>
-        <a href="https://linkedin.com/in/sahilatahar">
+        <a href="https://www.linkedin.com/in/mayureshkhankale/">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
+        <td align="center" style="padding : 10px">
+            <a href="https://github.com/SURAMYAJ">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://www.linkedin.com/in/suramya-jadhav-481953229/">
+            <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+        </a>
+        </td>
+        <td align="center" style="padding : 10px">
+            <a href="https://github.com/Manav2031">
+            <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
+        </a>
+        <br/>
+        <a href="https://www.linkedin.com/in/manav-mehta-05480622a/">
             <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
         </a>
         </td>
@@ -99,7 +117,7 @@ Tldraw contributors:
             <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
         </a>
         </td>
-        <td align="center" style="padding : 10px">
+         <td align="center" style="padding : 10px">
             <a href="https://github.com/sahilatahar">
             <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
         </a>

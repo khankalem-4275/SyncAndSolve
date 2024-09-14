@@ -19,27 +19,22 @@ A collaborative, real-time code editor where users can seamlessly code together.
 -   🎨 Multiple themes for personalized coding experience
 -   🎨 Collaborative Drawing: Enable users to draw and sketch collaboratively in real-time, enhancing the interactive experience of your project.
 
-## 🌟 Appreciation for Resources
-
-Special thanks to EMKC for providing the Piston API, enabling code execution. For more information, visit the following links:
-
 -   [Piston Repository](https://github.com/engineer-man/piston)
 -   [Piston Docs](https://piston.readthedocs.io/en/latest/api-v2/)
 
-Also, huge gratitude to Tldraw contributors for their amazing library. For more information about Tldraw, please visit:
-
+Tldraw contributors:
 -   [Tldraw Repository](https://github.com/tldraw/tldraw)
 -   [Tldraw Documentation](https://tldraw.dev/)
 
-## ✍️ About Developer
+## ✍️ About Developers
 
 <table>
   <tbody>
     <tr>
       <td align="center" valign="top">
-        <img src="https://github.com/sahilatahar.png" width="120px;" alt="Sahil Atahar"/>
+        <img src="./images/suramya_photo.png" width="120px;" alt="Mayuresh Khankale"/>
         <br />
-        <b>Sahil Atahar</b>
+        <b>Suramya Jadhav</b>
       </td>
     </tr>
     <tr>

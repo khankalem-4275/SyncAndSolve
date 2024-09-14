@@ -26,7 +26,7 @@ Tldraw contributors:
 -   [Tldraw Repository](https://github.com/tldraw/tldraw)
 -   [Tldraw Documentation](https://tldraw.dev/)
 
-## ✍️ About Developers
+## ✍️ About Us ([COMPUTER ENGINEERING - PICT PUNE])
 
 <table>
   <tbody>

@@ -36,7 +36,7 @@ Tldraw contributors:
         <br />
         <b>Suramya Jadhav</b>
       </td>
-      <td>  </td>
+      <td></td>
        <td align="center" valign="top">
         <img src="./images/mayuresh_photo.png" width="120px;" alt="Mayuresh Khankale"/>
         <br />
@@ -53,6 +53,7 @@ Tldraw contributors:
             <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
         </a>
         </td>
+        <td></td>
         <td align="center">
             <a href="https://github.com/sahilatahar">
             <img src="https://img.shields.io/badge/GitHub-100000.svg?style=for-the-badge&logo=github&logoColor=white"/>
